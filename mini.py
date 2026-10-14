@@ -89,20 +89,24 @@ def _shannon_entropy(text: str) -> float:
 def extract_url_features(url: str) -> Dict[str, Any]:
     """
     Dynamically extract feature dictionary from a raw URL string.
-    This allows real-time inference on unseen URLs.
+    This allows real-time inference on unseen URLs. Protocol and `www` are
+    removed first so a manually entered domain and Chrome's final HTTPS URL
+    produce the same feature vector.
     """
-    parsed = urlparse(url if "://" in url else "http://" + url)
+    canonical_url = normalize_url(url)
+    parsed = urlparse("http://" + canonical_url)
     domain = parsed.netloc or parsed.path.split('/')[0]
     path = parsed.path if parsed.netloc else ""
     
     # Character counts
-    char_counts = {c: url.count(c) for c in ['@', '?', '-', '=', '.', '#', '%', '+', '$', '!', '*', ',']}
-    char_counts['//'] = url.count('//') - (1 if url.startswith(('http://', 'https://')) else 0)
+    char_counts = {c: canonical_url.count(c) for c in ['@', '?', '-', '=', '.', '#', '%', '+', '$', '!', '*', ',']}
+    char_counts['//'] = canonical_url.count('//')
     
-    digits = sum(c.isdigit() for c in url)
-    letters = sum(c.isalpha() for c in url)
-    is_https = 1 if url.startswith('https://') or 'https' in url else 0
-    url_len = len(url)
+    digits = sum(c.isdigit() for c in canonical_url)
+    letters = sum(c.isalpha() for c in canonical_url)
+    # The canonical representation intentionally ignores transport protocol.
+    is_https = 0
+    url_len = len(canonical_url)
     
     # Domain & IP checks
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
@@ -116,15 +120,15 @@ def extract_url_features(url: str) -> Dict[str, Any]:
     is_deep_path = 1 if path_depth >= 3 else 0
     path_underscores = path.count('_')
     is_gov_edu = 1 if domain.endswith(('.gov', '.edu')) else 0
-    has_index_php = 1 if 'index.php' in url.lower() else 0
-    has_option_param = 1 if 'option=' in url.lower() else 0
+    has_index_php = 1 if 'index.php' in canonical_url else 0
+    has_option_param = 1 if 'option=' in canonical_url else 0
     
     # Defacement / hacked terms check
     hacked_terms = ['login', 'admin', 'verify', 'update', 'account', 'secure', 'banking', 'paypal']
-    has_hacked_terms = 1 if any(term in url.lower() for term in hacked_terms) else 0
+    has_hacked_terms = 1 if any(term in canonical_url for term in hacked_terms) else 0
     suspicious_ext = 1 if path.endswith(('.exe', '.php', '.zip', '.scr', '.apk')) else 0
     
-    tokens = [t for t in re.split(r'[^a-zA-Z0-9]', url) if t]
+    tokens = [t for t in re.split(r'[^a-zA-Z0-9]', canonical_url) if t]
     token_count = len(tokens)
     avg_token_len = sum(len(t) for t in tokens) / max(token_count, 1)
     
@@ -164,7 +168,7 @@ def extract_url_features(url: str) -> Dict[str, Any]:
         'defac_has_index_php': has_index_php,
         'defac_has_option_param': has_option_param,
         'adv_domain_ngram_entropy': 0.0,
-        'adv_path_entropy': _shannon_entropy(url),
+        'adv_path_entropy': _shannon_entropy(canonical_url),
         'adv_consonant_ratio': 0.0,
         'adv_vowel_ratio': 0.0,
         'adv_digit_ratio': digits / max(url_len, 1),

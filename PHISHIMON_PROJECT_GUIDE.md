@@ -120,6 +120,8 @@ The full URL model is useful when all audited numerical fields are available in 
 
 The raw-URL model uses 18 directly available fields. The full model uses the complete audited 43-field vector.
 
+Before feature extraction, the URL is canonicalized by removing the protocol and leading `www`. Therefore, `example.com`, `http://example.com`, `https://example.com`, and `https://www.example.com` produce the same raw-URL feature vector.
+
 ### Example
 
 ```text
