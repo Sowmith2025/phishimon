@@ -396,6 +396,74 @@ TOP_TRUSTED_DOMAINS = {
     'ac.in', 'edu', 'gov'
 }
 
+# A small, explainable safety net for a pattern that character-count models
+# commonly miss: a recognised brand placed inside an attacker-controlled host
+# name (for example, `paypal.verify-auth.example`).  These rules intentionally
+# require several independent signals, so a normal mention of a brand does not
+# become a phishing alert.
+BRAND_OFFICIAL_DOMAINS = {
+    'paypal': ('paypal.com',),
+    'google': ('google.com', 'google.co.in'),
+    'microsoft': ('microsoft.com', 'live.com', 'outlook.com', 'office.com'),
+    'apple': ('apple.com', 'icloud.com'),
+    'amazon': ('amazon.com', 'amazon.in'),
+    'netflix': ('netflix.com',),
+    'facebook': ('facebook.com',),
+    'instagram': ('instagram.com',),
+    'linkedin': ('linkedin.com',),
+    'bank': (),
+}
+URL_CREDENTIAL_LURES = {
+    'login', 'log-in', 'signin', 'sign-in', 'verify', 'verification',
+    'update', 'secure', 'security', 'password', 'account', 'authenticate',
+    'authentication', 'billing', 'suspended', 'unlock'
+}
+RESERVED_OR_TEST_TLDS = ('.example', '.test', '.invalid', '.localhost')
+
+
+def get_url_safety_override(url: str) -> Optional[Dict[str, Any]]:
+    """Return an explainable high-confidence phishing override, if warranted."""
+    normalized = normalize_url(url)
+    host = normalized.split('/', 1)[0].split(':', 1)[0]
+    if not host:
+        return None
+
+    host_labels = [label for label in host.split('.') if label]
+    signal_text = host.replace('.', ' ')
+    lures = sorted(term for term in URL_CREDENTIAL_LURES if term in signal_text)
+    matching_brands = []
+
+    for brand, official_domains in BRAND_OFFICIAL_DOMAINS.items():
+        if brand not in signal_text:
+            continue
+        is_official = any(host == official or host.endswith('.' + official) for official in official_domains)
+        if not is_official:
+            matching_brands.append(brand)
+
+    suspicious_structure = (
+        '-' in host
+        or len(host_labels) >= 3
+        or host.endswith(RESERVED_OR_TEST_TLDS)
+    )
+    if matching_brands and len(lures) >= 2 and suspicious_structure:
+        return {
+            'prediction': 'PHISHING',
+            'confidence': 98.0,
+            'probability_legitimate': 2.0,
+            'probability_phishing': 98.0,
+            'detection_source': 'brand-impersonation safety rule',
+            'reasoning': (
+                'A brand name appears on a non-official domain together with '
+                f'credential-lure terms: {", ".join(lures)}.'
+            ),
+            'safety_flags': {
+                'impersonated_brands': matching_brands,
+                'credential_lures': lures,
+                'suspicious_host_structure': True,
+            },
+        }
+    return None
+
 
 class URLPredictor:
     """Predictor for analyzing URL Phishing threats."""
@@ -432,6 +500,14 @@ class URLPredictor:
                     "confidence": 99.50,
                     "probability_legitimate": 99.50,
                     "probability_phishing": 0.50
+                }
+
+            safety_override = get_url_safety_override(url)
+            if safety_override:
+                return {
+                    'status': 'success',
+                    'url': url,
+                    **safety_override,
                 }
 
             if features_dict is not None:
