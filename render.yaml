@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: phishguard-api
+    runtime: docker
+    healthCheckPath: /api/health
+    plan: free
+    autoDeploy: true

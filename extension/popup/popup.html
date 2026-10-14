@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhishGuard AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-group">
+        <div class="shield-icon">🛡️</div>
+        <div>
+          <h1 class="app-title">PhishGuard AI</h1>
+          <div class="server-status" id="server-status">
+            <span class="status-dot online"></span> API Server Active
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-tab="tab-active">Active Page</button>
+      <button class="nav-btn" data-tab="tab-manual">Manual Scanner</button>
+    </nav>
+
+    <!-- Tab 1: Active Page Scanner -->
+    <main class="tab-content active" id="tab-active">
+      <div class="url-card">
+        <div class="url-label">CURRENT VISITED PAGE</div>
+        <div class="url-text" id="active-url-display">Fetching current tab...</div>
+      </div>
+
+      <div class="gauge-card" id="gauge-card">
+        <div class="status-badge" id="status-badge">ANALYZING...</div>
+        <div class="confidence-val" id="confidence-val">--%</div>
+        <div class="confidence-label">THREAT CONFIDENCE</div>
+
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-val" id="prob-legit">--%</div>
+          <div class="metric-lbl">Legitimate Score</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="prob-phish">--%</div>
+          <div class="metric-lbl">Phishing Risk</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Tab 2: Manual Scanner -->
+    <main class="tab-content" id="tab-manual">
+      <div class="input-group">
+        <label for="manual-url-input">Custom URL</label>
+        <input type="url" id="manual-url-input" placeholder="e.g. http://secure-update.com/login" />
+      </div>
+
+      <div class="input-group">
+        <label for="manual-email-input">Email Body / Content</label>
+        <textarea id="manual-email-input" rows="4" placeholder="Paste email text here to analyze for urgent keywords, suspicious links & phishing indicators..."></textarea>
+      </div>
+
+      <button class="scan-btn" id="run-manual-scan-btn">⚡ Run AI Threat Analysis</button>
+
+      <div class="result-box hidden" id="manual-result-box">
+        <div class="result-header" id="manual-result-header">ANALYSIS COMPLETE</div>
+        <div class="result-desc" id="manual-result-desc">--</div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span>Powered by XGBoost Dual ML Model</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

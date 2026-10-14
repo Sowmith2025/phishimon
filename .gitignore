@@ -1,0 +1,21 @@
+# Python runtime files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.vscode/
+
+# Generated documents and review artifacts
+*.docx
+*.pdf
+reference_doc_work/
+review_render/
+
+# Extension packages and local editor files
+dist/
+.DS_Store
+scratch/
+extracted_paper.txt
+
+# Environment secrets
+.env

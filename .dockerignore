@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.git/
+scratch/
+reference_doc_work/
+*.docx
+*.png
+*.pdf
+review_render/
+extension/.DS_Store
