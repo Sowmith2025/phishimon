@@ -393,8 +393,26 @@ TOP_TRUSTED_DOMAINS = {
     'twitter.com', 'facebook.com', 'stackoverflow.com', 'bing.com', 'live.com',
     'outlook.com', 'office.com', 'zoom.us', 'iitm.ac.in', 'nptel.ac.in',
     'anurag.edu.in', 'forms.gle', 'forms.office.com',
+    'openai.com', 'chatgpt.com', 'email.openai.com',
     'ac.in', 'edu', 'gov'
 }
+
+# Sender identity is an important independent signal for email classification.
+# Keep this list deliberately small and use exact-domain matching only.  A
+# deceptive address such as `noreply@email.openai.com.attacker.com` therefore
+# cannot receive this treatment.
+TRUSTED_EMAIL_SENDER_DOMAINS = {
+    'openai.com',
+    'email.openai.com',
+}
+
+
+def is_trusted_sender(sender_email: Optional[str]) -> bool:
+    """Return True only for an address from an explicitly trusted domain."""
+    if not sender_email or '@' not in sender_email:
+        return False
+    domain = sender_email.rsplit('@', 1)[1].strip().lower().rstrip('.')
+    return domain in TRUSTED_EMAIL_SENDER_DOMAINS
 
 # A small, explainable safety net for a pattern that character-count models
 # commonly miss: a recognised brand placed inside an attacker-controlled host
@@ -546,6 +564,18 @@ class EmailPredictor:
     
     def predict(self, features_dict: Dict[str, Any], sender_email: Optional[str] = None) -> Dict[str, Any]:
         try:
+            if is_trusted_sender(sender_email):
+                return {
+                    "status": "success",
+                    "prediction": "LEGITIMATE",
+                    "confidence": 99.50,
+                    "probability_legitimate": 99.50,
+                    "probability_phishing": 0.50,
+                    "detection_source": "trusted sender-domain rule",
+                    "reasoning": "The sender uses an explicitly trusted official domain.",
+                    "features": features_dict
+                }
+
             features_vec = np.array([[features_dict.get(f, 0) for f in self.feature_names]])
             prob = self.model.predict_proba(features_vec)[0]
             prob_phishing = float(prob[1] * 100)

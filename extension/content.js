@@ -106,7 +106,7 @@
     return "";
   }
 
-  const SCRIPT_VERSION = "v7.0";
+  const SCRIPT_VERSION = "v7.1";
 
   function analyzeOpenEmail() {
     // Target email containers across Gmail, Outlook, Yahoo Mail
